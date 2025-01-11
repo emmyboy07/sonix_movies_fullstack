@@ -24,7 +24,7 @@ async function retryAction(action, retries = 3, delay = 2000) {
 // Function to search and download movie
 async function searchAndDownloadMovie(movieName) {
     const browser = await puppeteer.launch({
-        executablePath: process.env.CHROME_BIN || '/usr/bin/google-chrome-stable', // Use Chromium on Render
+        executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome', // Use Chromium on Render
         headless: true,
         args: [
             '--no-sandbox',
@@ -133,9 +133,6 @@ async function searchAndDownloadMovie(movieName) {
         console.error("Stack trace:", error.stack);
         throw error;
     } finally {
-        console.log("Leaving browser open for debugging...");
-        await new Promise(resolve => setTimeout(resolve, 3600000)); // Keep browser open for 1 hour
-
         if (browser && browser.isConnected()) {
             await browser.close();
         }

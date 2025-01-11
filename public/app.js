@@ -1114,13 +1114,17 @@ document.getElementById('download-button').addEventListener('click', async () =>
     }
 
     const movieTitle = movieTitleElement.textContent.trim();
-    messageContainer.textContent = `Starting download process for "${movieTitle}"...`;
+    if (!movieTitle) {
+        messageContainer.textContent = 'Please provide a valid movie title!';
+        return;
+    }
 
+    messageContainer.textContent = `Starting download process for "${movieTitle}"...`;
     downloadButton.disabled = true;
     downloadButton.textContent = "Downloading...";
 
     try {
-        const response = await fetch('https://backend-2-2-qnzw.onrender.com', {
+        const response = await fetch('https://sonix-movies-fullstack.onrender.com/download', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ movieTitle }),
@@ -1134,43 +1138,28 @@ document.getElementById('download-button').addEventListener('click', async () =>
             return;
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let done = false;
+        const responseData = await response.json();
+        if (responseData.downloadLink) {
+            messageContainer.textContent = `Download ready! Resolution: ${responseData.resolution}`;
+            
+            // Create a link to the download
+            const downloadLink = document.createElement('a');
+            downloadLink.href = responseData.downloadLink;
+            downloadLink.textContent = 'Click here to download';
+            downloadLink.style.display = 'block';
+            downloadLink.target = '_blank';
 
-        while (!done) {
-            const { value, done: readerDone } = await reader.read();
-            done = readerDone;
-
-            if (value) {
-                const data = JSON.parse(decoder.decode(value.trim()));
-
-                if (data.message) {
-                    if (data.message.includes("Download completed successfully")) {
-                        messageContainer.textContent = "Processing download completion...";
-                        setTimeout(() => {
-                            messageContainer.textContent = data.message;
-                            downloadButton.disabled = false;
-                            downloadButton.textContent = "Download Movie";
-                        }, 3 * 60 * 1000);
-                    } else {
-                        messageContainer.textContent = data.message;
-                    }
-                } else if (data.error) {
-                    messageContainer.textContent = `Error: ${data.error}`;
-                    downloadButton.disabled = false;
-                    downloadButton.textContent = "Download Movie";
-                }
-            }
+            messageContainer.appendChild(downloadLink);
+        } else {
+            messageContainer.textContent = 'No download link available.';
         }
     } catch (error) {
         console.error('Error initiating download:', error);
         messageContainer.textContent = 'An unexpected error occurred while starting the download.';
+    } finally {
         downloadButton.disabled = false;
         downloadButton.textContent = "Download Movie";
     }
-}
-
-);
+});
 
 initApp();
